@@ -60,14 +60,12 @@ Everything else can be built on top of this.
 
 ## Core Protocol
 
-| Topic | Description |
-|------|-------------|
-| 📘 Introduction | https://github.com/OpenClaiming/Documentation/blob/main/docs/introduction.md |
-| 🧠 Concepts | https://github.com/OpenClaiming/Documentation/blob/main/docs/concepts.md |
-| 📄 OpenClaim Format | https://github.com/OpenClaiming/Documentation/blob/main/docs/openclaim_format.md |
-| 🔐 Signatures | https://github.com/OpenClaiming/Documentation/blob/main/docs/signatures.md |
-| 🧾 Canonicalization | https://github.com/OpenClaiming/Documentation/blob/main/docs/canonicalization.md |
-| 🌐 Publishing Claims | https://github.com/OpenClaiming/Documentation/blob/main/docs/publishing_claims.md |
+- 📘 [Introduction](https://github.com/OpenClaiming/Documentation/blob/main/docs/introduction.md)
+- 🧠 [Concepts](https://github.com/OpenClaiming/Documentation/blob/main/docs/concepts.md)
+- 📄 [OpenClaim Format](https://github.com/OpenClaiming/Documentation/blob/main/docs/openclaim_format.md)
+- 🔐 [Signatures](https://github.com/OpenClaiming/Documentation/blob/main/docs/signatures.md)
+- 🧾 [Canonicalization](https://github.com/OpenClaiming/Documentation/blob/main/docs/canonicalization.md)
+- 🌐 [Publishing Claims](https://github.com/OpenClaiming/Documentation/blob/main/docs/publishing_claims.md)
 
 ---
 
