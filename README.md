@@ -71,31 +71,25 @@ Everything else can be built on top of this.
 
 ## Identity & Authorization
 
-| Topic | Description |
-|------|-------------|
-| 🔗 Identity Linking | https://github.com/OpenClaiming/Documentation/blob/main/docs/identity_linking.md |
-| 📱 Device & Session Keys | https://github.com/OpenClaiming/Documentation/blob/main/docs/device_keys.md |
-| 🛡 Capability Claims | https://github.com/OpenClaiming/Documentation/blob/main/docs/capabilities.md |
+- 🔗 [Identity Linking](https://github.com/OpenClaiming/Documentation/blob/main/docs/identity_linking.md)
+- 📱 [Device & Session Keys](https://github.com/OpenClaiming/Documentation/blob/main/docs/device_keys.md)
+- 🛡 [Capability Claims](https://github.com/OpenClaiming/Documentation/blob/main/docs/capabilities.md)
 
 ---
 
 ## Distributed Systems
 
-| Topic | Description |
-|------|-------------|
-| ☁️ Intercloud Claims | https://github.com/OpenClaiming/Documentation/blob/main/docs/intercloud.md |
-| ⛓ Blockchain Anchoring | https://github.com/OpenClaiming/Documentation/blob/main/docs/blockchain.md |
+- ☁️ [Intercloud Claims](https://github.com/OpenClaiming/Documentation/blob/main/docs/intercloud.md)
+- ⛓ [Blockchain Anchoring](https://github.com/OpenClaiming/Documentation/blob/main/docs/blockchain.md)
 
 ---
 
 ## Implementation
 
-| Topic | Description |
-|------|-------------|
-| ⚙ Implementation Guide | https://github.com/OpenClaiming/Documentation/blob/main/docs/implementation.md |
-| 🔒 Security | https://github.com/OpenClaiming/Documentation/blob/main/docs/security.md |
-| 📊 Comparisons | https://github.com/OpenClaiming/Documentation/blob/main/docs/comparisons.md |
-| ❓ FAQ | https://github.com/OpenClaiming/Documentation/blob/main/docs/faq.md |
+- ⚙ [Implementation Guide](https://github.com/OpenClaiming/Documentation/blob/main/docs/implementation.md)
+- 🔒 [Security](https://github.com/OpenClaiming/Documentation/blob/main/docs/security.md)
+- 📊 [Comparisons](https://github.com/OpenClaiming/Documentation/blob/main/docs/comparisons.md)
+- ❓ [FAQ](https://github.com/OpenClaiming/Documentation/blob/main/docs/faq.md)
 
 ---
 
@@ -103,25 +97,6 @@ Everything else can be built on top of this.
 
 All implementations expose the same core interface:
 
-```
-canonicalize(claim)
-sign(claim, privateKey)
-verify(claim, publicKey)
-```
-
----
-
-## Pick your language
-
-| Language | Repository |
-|---------|-----------|
-| JavaScript | https://github.com/OpenClaiming/Javascript |
-| Python | https://github.com/OpenClaiming/Python |
-| Go | https://github.com/OpenClaiming/Go |
-| Rust | https://github.com/OpenClaiming/Rust |
-| PHP | https://github.com/OpenClaiming/PHP |
-| Java | https://github.com/OpenClaiming/Java |
-| Swift | https://github.com/OpenClaiming/Swift |
 
 ---
 
