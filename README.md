@@ -2,186 +2,209 @@
 
 # 📜 OpenClaiming Protocol Documentation
 
-Welcome to the official documentation for the **OpenClaiming Protocol (OCP)**.
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Protocol](https://img.shields.io/badge/protocol-OCP%20v1-green.svg)
+![Status](https://img.shields.io/badge/status-draft-orange.svg)
+![Spec](https://img.shields.io/badge/spec-open-red.svg)
 
-OpenClaiming is a simple protocol for creating **cryptographically signed claims** that anyone can verify.
+Welcome to the **official documentation for the OpenClaiming Protocol
+(OCP)**.
 
-An **OpenClaim** is simply a signed JSON document stating something that can be verified using a public key.
+OpenClaiming defines a simple way to create **cryptographically signed
+claims** that anyone can verify.
+
+------------------------------------------------------------------------
+
+# ✨ What is an OpenClaim?
+
+An **OpenClaim** is a signed JSON document that states something.
 
 Example:
 
-```json
+``` json
 {
-  "ocp": 1,
-  "iss": "example.com/alice",
-  "stm": {
-    "role": "admin"
-  },
-  "sig": "BASE64_SIGNATURE"
+    "ocp": 1,
+    "iss": "example.com/alice",
+    "stm": {
+        "role": "admin"
+    },
+    "sig": "BASE64_SIGNATURE"
 }
 ```
 
-The signature proves that the **issuer made the statement**. See more at **[OpenClaiming.org](https://openclaiming.org)**.
+The signature proves the **issuer made the statement**.
 
----
+Learn more at **https://openclaiming.org**.
 
-# 🚀 Goals of OpenClaiming
+------------------------------------------------------------------------
 
-OpenClaiming aims to provide a **minimal primitive** for verifiable statements.
+# 🚀 Design Goals
 
-Key goals:
+OpenClaiming was designed to be:
 
-- simple to implement
-- human readable
-- decentralized
-- independent of blockchains
-- independent of identity providers
-- easy to verify
-- easy to publish anywhere
+-   Simple
+-   Human-readable
+-   Decentralized
+-   Implementation-friendly
+-   Independent of blockchains
+-   Independent of identity providers
+-   Easy to publish anywhere
 
-OpenClaiming intentionally focuses on the **core primitive**:
+The protocol intentionally focuses on one primitive:
 
-> A signed claim.
+> A signed claim
 
 Everything else can be built on top of this.
 
----
+------------------------------------------------------------------------
 
-# 📚 Documentation Index
+# 📚 Documentation Overview
 
-## Core Concepts
+## Core Protocol
 
-| Topic | Description |
-|------|-------------|
-| 📘 Introduction | Overview of the protocol |
-| 🧠 Concepts | Core terminology and model |
-| 📄 OpenClaim Format | Structure of claim documents |
-| 🔐 Signatures | How claims are signed |
-| 🧾 Canonicalization | Deterministic JSON signing |
-| 🌐 Publishing Claims | How claims are distributed |
+  ----------------------------------------------------------------------------------------------------------
+  Topic                  Description
+  ---------------------- -----------------------------------------------------------------------------------
+  📘 Introduction        https://github.com/OpenClaiming/Documentation/blob/main/docs/introduction.md
 
----
+  🧠 Concepts            https://github.com/OpenClaiming/Documentation/blob/main/docs/concepts.md
 
-## Identity and Authorization
+  📄 OpenClaim Format    https://github.com/OpenClaiming/Documentation/blob/main/docs/openclaim_format.md
 
-| Topic | Description |
-|------|-------------|
-| 🔗 Identity Linking | Proving the same identity across services |
-| 📱 Device & Session Keys | Multiple signing keys per user |
-| 🛡 Capability Claims | Roles and permissions |
+  🔐 Signatures          https://github.com/OpenClaiming/Documentation/blob/main/docs/signatures.md
 
----
+  🧾 Canonicalization    https://github.com/OpenClaiming/Documentation/blob/main/docs/canonicalization.md
+
+  🌐 Publishing Claims   https://github.com/OpenClaiming/Documentation/blob/main/docs/publishing_claims.md
+  ----------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+## Identity & Authorization
+
+  ---------------------------------------------------------------------------------------------------------
+  Topic                  Description
+  ---------------------- ----------------------------------------------------------------------------------
+  🔗 Identity Linking    https://github.com/OpenClaiming/Documentation/blob/main/docs/identity_linking.md
+
+  📱 Device & Session    https://github.com/OpenClaiming/Documentation/blob/main/docs/device_keys.md
+  Keys                   
+
+  🛡 Capability Claims    https://github.com/OpenClaiming/Documentation/blob/main/docs/capabilities.md
+  ---------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------
 
 ## Distributed Systems
 
-| Topic | Description |
-|------|-------------|
-| ☁️ Intercloud Claims | Distributed systems coordination |
-| ⛓ Blockchain Anchoring | Optional blockchain anchoring |
+  ---------------------------------------------------------------------------------------------------
+  Topic                  Description
+  ---------------------- ----------------------------------------------------------------------------
+  ☁️ Intercloud Claims   https://github.com/OpenClaiming/Documentation/blob/main/docs/intercloud.md
 
----
+  ⛓ Blockchain Anchoring https://github.com/OpenClaiming/Documentation/blob/main/docs/blockchain.md
+  ---------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+## Implementation
+
+  -------------------------------------------------------------------------------------------------------
+  Topic                  Description
+  ---------------------- --------------------------------------------------------------------------------
+  ⚙ Implementation Guide https://github.com/OpenClaiming/Documentation/blob/main/docs/implementation.md
+
+  🔒 Security            https://github.com/OpenClaiming/Documentation/blob/main/docs/security.md
+
+  📊 Comparisons         https://github.com/OpenClaiming/Documentation/blob/main/docs/comparisons.md
+
+  ❓ FAQ                 https://github.com/OpenClaiming/Documentation/blob/main/docs/faq.md
+  -------------------------------------------------------------------------------------------------------
+
+------------------------------------------------------------------------
 
 # 🧪 Reference Implementations
 
-OpenClaiming includes minimal **reference implementations** to help developers integrate the protocol quickly.
+All implementations expose the same core interface:
 
-These implementations demonstrate:
+    canonicalize(claim)
+    sign(claim, privateKey)
+    verify(claim, publicKey)
 
-- canonicalization
-- signing
-- verification
-- interoperability with test vectors
+------------------------------------------------------------------------
 
-All libraries expose the same core interface:
+## Pick your language
 
-```
-canonicalize(claim)
-sign(claim, privateKey)
-verify(claim, publicKey)
-```
+  Language     Repository
+  ------------ --------------------------------------------
+  JavaScript   https://github.com/OpenClaiming/javascript
+  Python       https://github.com/OpenClaiming/python
+  Go           https://github.com/OpenClaiming/go
+  Rust         https://github.com/OpenClaiming/rust
+  PHP          https://github.com/OpenClaiming/php
+  Java         https://github.com/OpenClaiming/java
+  Swift        https://github.com/OpenClaiming/swift
 
----
+------------------------------------------------------------------------
 
-## 🌐 Pick your language
+# ⚙ Example Usage
 
-All implementations are designed to be **interoperable**. A claim signed in one language must verify in another.
-
-| Language | Repository |
-|--------|------------|
-| JavaScript | https://github.com/OpenClaiming/Javascript |
-| Python | https://github.com/OpenClaiming/Python |
-| Go | https://github.com/OpenClaiming/Go |
-| Rust | https://github.com/OpenClaiming/Rust |
-| PHP | https://github.com/OpenClaiming/PHP |
-| Java | https://github.com/OpenClaiming/Java |
-| Swift | https://github.com/OpenClaiming/Swift |
-
----
-
-## ⚙ Example Usage
-
-Example (JavaScript):
-
-```javascript
+``` javascript
 import OpenClaim from "openclaiming";
 
 const claim = {
-  ocp: 1,
-  iss: "example.com/alice",
-  stm: {
-    role: "admin"
-  }
+    ocp: 1,
+    iss: "example.com/alice",
+    stm: { role: "admin" }
 };
 
 const signed = OpenClaim.sign(claim, privateKey);
+
 const valid = OpenClaim.verify(signed, publicKey);
 
 console.log(valid);
 ```
 
----
+------------------------------------------------------------------------
 
-# 🌍 Why OpenClaiming?
+# 🔁 Interoperability
 
-Many systems require **verifiable statements**.
+Official test vectors:
 
-Existing solutions often involve:
+https://github.com/OpenClaiming/test-vectors
 
-- complex credential frameworks
-- blockchain dependencies
-- identity infrastructure
-- heavy libraries
+------------------------------------------------------------------------
 
-OpenClaiming instead focuses on a single primitive:
+# 🌐 Publishing Claims
 
-> **A signed claim that anyone can verify.**
+Convention:
 
-Suitable for:
+    .well-known/openclaiming/<domain>/<identity>.json
 
-- identity linking
-- permissions
-- distributed coordination
-- audit logs
-- device authentication
-- software signing
-- blockchain anchoring
-- intercloud protocols
+Example:
 
----
+    example.com/.well-known/openclaiming/example.com/alice.json
 
-# 🛠 Contributing
+------------------------------------------------------------------------
 
-OpenClaiming is an open standard.
+# 🧩 Ecosystem Repositories
 
-Contributions are welcome:
+  ----------------------------------------------------------------------------
+  Repository                                      Purpose
+  ----------------------------------------------- ----------------------------
+  https://github.com/OpenClaiming/spec            Normative protocol
+                                                  specification
 
-- specification improvements
-- documentation clarity
-- security review
-- example claims
-- language implementations
+  https://github.com/OpenClaiming/Documentation   Human-readable documentation
 
----
+  https://github.com/OpenClaiming/test-vectors    Interoperability tests
+
+  https://github.com/OpenClaiming/examples        Example claims
+
+  https://openclaiming.org                        Official website
+  ----------------------------------------------------------------------------
+
+------------------------------------------------------------------------
 
 # 📜 License
 
