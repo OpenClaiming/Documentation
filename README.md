@@ -7,13 +7,11 @@
 ![Status](https://img.shields.io/badge/status-draft-orange.svg)
 ![Spec](https://img.shields.io/badge/spec-open-red.svg)
 
-Welcome to the **official documentation for the OpenClaiming Protocol
-(OCP)**.
+Welcome to the **official documentation for the OpenClaiming Protocol (OCP)**.
 
-OpenClaiming defines a simple way to create **cryptographically signed
-claims** that anyone can verify.
+OpenClaiming defines a simple way to create **cryptographically signed claims** that anyone can verify.
 
-------------------------------------------------------------------------
+---
 
 # ✨ What is an OpenClaim?
 
@@ -21,7 +19,7 @@ An **OpenClaim** is a signed JSON document that states something.
 
 Example:
 
-``` json
+```json
 {
     "ocp": 1,
     "iss": "example.com/alice",
@@ -36,19 +34,19 @@ The signature proves the **issuer made the statement**.
 
 Learn more at **https://openclaiming.org**.
 
-------------------------------------------------------------------------
+---
 
 # 🚀 Design Goals
 
 OpenClaiming was designed to be:
 
--   Simple
--   Human-readable
--   Decentralized
--   Implementation-friendly
--   Independent of blockchains
--   Independent of identity providers
--   Easy to publish anywhere
+- Simple
+- Human-readable
+- Decentralized
+- Implementation-friendly
+- Independent of blockchains
+- Independent of identity providers
+- Easy to publish anywhere
 
 The protocol intentionally focuses on one primitive:
 
@@ -56,100 +54,82 @@ The protocol intentionally focuses on one primitive:
 
 Everything else can be built on top of this.
 
-------------------------------------------------------------------------
+---
 
 # 📚 Documentation Overview
 
 ## Core Protocol
 
-  ----------------------------------------------------------------------------------------------------------
-  Topic                  Description
-  ---------------------- -----------------------------------------------------------------------------------
-  📘 Introduction        https://github.com/OpenClaiming/Documentation/blob/main/docs/introduction.md
+| Topic | Description |
+|------|-------------|
+| 📘 Introduction | https://github.com/OpenClaiming/Documentation/blob/main/docs/introduction.md |
+| 🧠 Concepts | https://github.com/OpenClaiming/Documentation/blob/main/docs/concepts.md |
+| 📄 OpenClaim Format | https://github.com/OpenClaiming/Documentation/blob/main/docs/openclaim_format.md |
+| 🔐 Signatures | https://github.com/OpenClaiming/Documentation/blob/main/docs/signatures.md |
+| 🧾 Canonicalization | https://github.com/OpenClaiming/Documentation/blob/main/docs/canonicalization.md |
+| 🌐 Publishing Claims | https://github.com/OpenClaiming/Documentation/blob/main/docs/publishing_claims.md |
 
-  🧠 Concepts            https://github.com/OpenClaiming/Documentation/blob/main/docs/concepts.md
-
-  📄 OpenClaim Format    https://github.com/OpenClaiming/Documentation/blob/main/docs/openclaim_format.md
-
-  🔐 Signatures          https://github.com/OpenClaiming/Documentation/blob/main/docs/signatures.md
-
-  🧾 Canonicalization    https://github.com/OpenClaiming/Documentation/blob/main/docs/canonicalization.md
-
-  🌐 Publishing Claims   https://github.com/OpenClaiming/Documentation/blob/main/docs/publishing_claims.md
-  ----------------------------------------------------------------------------------------------------------
-
-------------------------------------------------------------------------
+---
 
 ## Identity & Authorization
 
-  ---------------------------------------------------------------------------------------------------------
-  Topic                  Description
-  ---------------------- ----------------------------------------------------------------------------------
-  🔗 Identity Linking    https://github.com/OpenClaiming/Documentation/blob/main/docs/identity_linking.md
+| Topic | Description |
+|------|-------------|
+| 🔗 Identity Linking | https://github.com/OpenClaiming/Documentation/blob/main/docs/identity_linking.md |
+| 📱 Device & Session Keys | https://github.com/OpenClaiming/Documentation/blob/main/docs/device_keys.md |
+| 🛡 Capability Claims | https://github.com/OpenClaiming/Documentation/blob/main/docs/capabilities.md |
 
-  📱 Device & Session    https://github.com/OpenClaiming/Documentation/blob/main/docs/device_keys.md
-  Keys                   
-
-  🛡 Capability Claims    https://github.com/OpenClaiming/Documentation/blob/main/docs/capabilities.md
-  ---------------------------------------------------------------------------------------------------------
-
-------------------------------------------------------------------------
+---
 
 ## Distributed Systems
 
-  ---------------------------------------------------------------------------------------------------
-  Topic                  Description
-  ---------------------- ----------------------------------------------------------------------------
-  ☁️ Intercloud Claims   https://github.com/OpenClaiming/Documentation/blob/main/docs/intercloud.md
+| Topic | Description |
+|------|-------------|
+| ☁️ Intercloud Claims | https://github.com/OpenClaiming/Documentation/blob/main/docs/intercloud.md |
+| ⛓ Blockchain Anchoring | https://github.com/OpenClaiming/Documentation/blob/main/docs/blockchain.md |
 
-  ⛓ Blockchain Anchoring https://github.com/OpenClaiming/Documentation/blob/main/docs/blockchain.md
-  ---------------------------------------------------------------------------------------------------
-
-------------------------------------------------------------------------
+---
 
 ## Implementation
 
-  -------------------------------------------------------------------------------------------------------
-  Topic                  Description
-  ---------------------- --------------------------------------------------------------------------------
-  ⚙ Implementation Guide https://github.com/OpenClaiming/Documentation/blob/main/docs/implementation.md
+| Topic | Description |
+|------|-------------|
+| ⚙ Implementation Guide | https://github.com/OpenClaiming/Documentation/blob/main/docs/implementation.md |
+| 🔒 Security | https://github.com/OpenClaiming/Documentation/blob/main/docs/security.md |
+| 📊 Comparisons | https://github.com/OpenClaiming/Documentation/blob/main/docs/comparisons.md |
+| ❓ FAQ | https://github.com/OpenClaiming/Documentation/blob/main/docs/faq.md |
 
-  🔒 Security            https://github.com/OpenClaiming/Documentation/blob/main/docs/security.md
-
-  📊 Comparisons         https://github.com/OpenClaiming/Documentation/blob/main/docs/comparisons.md
-
-  ❓ FAQ                 https://github.com/OpenClaiming/Documentation/blob/main/docs/faq.md
-  -------------------------------------------------------------------------------------------------------
-
-------------------------------------------------------------------------
+---
 
 # 🧪 Reference Implementations
 
 All implementations expose the same core interface:
 
-    canonicalize(claim)
-    sign(claim, privateKey)
-    verify(claim, publicKey)
+```
+canonicalize(claim)
+sign(claim, privateKey)
+verify(claim, publicKey)
+```
 
-------------------------------------------------------------------------
+---
 
 ## Pick your language
 
-  Language     Repository
-  ------------ --------------------------------------------
-  JavaScript   https://github.com/OpenClaiming/javascript
-  Python       https://github.com/OpenClaiming/python
-  Go           https://github.com/OpenClaiming/go
-  Rust         https://github.com/OpenClaiming/rust
-  PHP          https://github.com/OpenClaiming/php
-  Java         https://github.com/OpenClaiming/java
-  Swift        https://github.com/OpenClaiming/swift
+| Language | Repository |
+|---------|-----------|
+| JavaScript | https://github.com/OpenClaiming/javascript |
+| Python | https://github.com/OpenClaiming/python |
+| Go | https://github.com/OpenClaiming/go |
+| Rust | https://github.com/OpenClaiming/rust |
+| PHP | https://github.com/OpenClaiming/php |
+| Java | https://github.com/OpenClaiming/java |
+| Swift | https://github.com/OpenClaiming/swift |
 
-------------------------------------------------------------------------
+---
 
 # ⚙ Example Usage
 
-``` javascript
+```javascript
 import OpenClaim from "openclaiming";
 
 const claim = {
@@ -165,7 +145,7 @@ const valid = OpenClaim.verify(signed, publicKey);
 console.log(valid);
 ```
 
-------------------------------------------------------------------------
+---
 
 # 🔁 Interoperability
 
@@ -173,38 +153,35 @@ Official test vectors:
 
 https://github.com/OpenClaiming/test-vectors
 
-------------------------------------------------------------------------
+---
 
 # 🌐 Publishing Claims
 
 Convention:
 
-    .well-known/openclaiming/<domain>/<identity>.json
+```
+.well-known/openclaiming/<domain>/<identity>.json
+```
 
 Example:
 
-    example.com/.well-known/openclaiming/example.com/alice.json
+```
+example.com/.well-known/openclaiming/example.com/alice.json
+```
 
-------------------------------------------------------------------------
+---
 
 # 🧩 Ecosystem Repositories
 
-  ----------------------------------------------------------------------------
-  Repository                                      Purpose
-  ----------------------------------------------- ----------------------------
-  https://github.com/OpenClaiming/spec            Normative protocol
-                                                  specification
+| Repository | Purpose |
+|-----------|--------|
+| https://github.com/OpenClaiming/spec | Normative protocol specification |
+| https://github.com/OpenClaiming/Documentation | Human-readable documentation |
+| https://github.com/OpenClaiming/test-vectors | Interoperability tests |
+| https://github.com/OpenClaiming/examples | Example claims |
+| https://openclaiming.org | Official website |
 
-  https://github.com/OpenClaiming/Documentation   Human-readable documentation
-
-  https://github.com/OpenClaiming/test-vectors    Interoperability tests
-
-  https://github.com/OpenClaiming/examples        Example claims
-
-  https://openclaiming.org                        Official website
-  ----------------------------------------------------------------------------
-
-------------------------------------------------------------------------
+---
 
 # 📜 License
 
