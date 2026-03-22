@@ -137,14 +137,6 @@ console.log(valid);
 
 ---
 
-# 🔁 Interoperability
-
-Official test vectors:
-
-https://github.com/OpenClaiming/test-vectors
-
----
-
 # 🌐 Publishing Claims
 
 Convention:
