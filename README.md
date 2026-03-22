@@ -84,14 +84,31 @@ Everything else can be built on top of this.
 
 ---
 
+## ⛓ EVM Blockchains
+
+OpenClaiming is **blockchain-agnostic**, but can be integrated with blockchains for:
+
+- payment execution with micropayment suport
+- claim verification on-chain
+- anchoring claims immutably
+- building trustless economic systems
+
+Unlike typical blockchain-native protocols, OpenClaiming:
+
+- does not require blockchain for validity
+- can operate entirely off-chain
+- uses blockchains only as an optional execution or settlement layer
+
+➡️ [EVM Blockchains Integration](https://github.com/OpenClaiming/EVM/blob/main/docs/evm.md)
+
+---
+
 ## Implementation
 
 - ⚙ [Implementation Guide](https://github.com/OpenClaiming/Documentation/blob/main/docs/implementation.md)
 - 🔒 [Security](https://github.com/OpenClaiming/Documentation/blob/main/docs/security.md)
 - 📊 [Comparisons](https://github.com/OpenClaiming/Documentation/blob/main/docs/comparisons.md)
 - ❓ [FAQ](https://github.com/OpenClaiming/Documentation/blob/main/docs/faq.md)
-
----
 
 # 🧪 Reference Implementations
 
