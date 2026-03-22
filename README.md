@@ -99,7 +99,7 @@ Unlike typical blockchain-native protocols, OpenClaiming:
 - can operate entirely off-chain
 - uses blockchains only as an optional execution or settlement layer
 
-➡️ [EVM Blockchains Integration](https://github.com/OpenClaiming/EVM/blob/main/docs/evm.md)
+➡️ [EVM Blockchains Integration](https://github.com/OpenClaiming/Documentation/blob/main/docs/evm.md)
 
 ---
 
