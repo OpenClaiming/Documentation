@@ -32,3 +32,5 @@ To verify a claim:
 Issuers are responsible for protecting private keys. Compromise of the signing key allows an attacker to produce valid claims.
 
 Rotation strategies and revocation mechanisms may be implemented at the application layer.
+
+Keys specified as URLs (https://...) are revocable — updating the content at that URL effectively revokes or rotates the key. Keys specified as inline data:key/... URIs are non-revocable by design. Issuers should choose the form that matches their revocability intent.

@@ -2,14 +2,14 @@
 
 # 📜 OpenClaiming Protocol Documentation
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Protocol](https://img.shields.io/badge/protocol-OCP%20v1-green.svg)
-![Status](https://img.shields.io/badge/status-draft-orange.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)  
+![Protocol](https://img.shields.io/badge/protocol-OCP%20v1-green.svg)  
+![Status](https://img.shields.io/badge/status-draft-orange.svg)  
 ![Spec](https://img.shields.io/badge/spec-open-red.svg)
 
 Welcome to the **official documentation for the OpenClaiming Protocol (OCP)**.
 
-OpenClaiming defines a simple way to create **cryptographically signed claims** that anyone can verify.
+OpenClaiming defines a simple way to create **cryptographically signed claims** that anyone can verify — across systems, organizations, and blockchains.
 
 ---
 
@@ -21,16 +21,17 @@ Example:
 
 ```json
 {
-    "ocp": 1,
-    "iss": "example.com/alice",
-    "stm": {
-        "role": "admin"
-    },
-    "sig": "BASE64_SIGNATURE"
+  "ocp": 1,
+  "iss": "example.com/alice",
+  "stm": {
+    "role": "admin"
+  },
+  "key": ["data:key/es256;base64,..."],
+  "sig": ["BASE64_SIGNATURE"]
 }
 ```
 
-The signature proves the **issuer made the statement**.
+The signatures prove **authorized parties made the statement**.
 
 Learn more at **https://openclaiming.org**.
 
@@ -47,12 +48,65 @@ OpenClaiming was designed to be:
 - Independent of blockchains
 - Independent of identity providers
 - Easy to publish anywhere
+- Extensible across execution environments
 
 The protocol intentionally focuses on one primitive:
 
 > A signed claim
 
-Everything else can be built on top of this.
+Everything else is built on top of this.
+
+---
+
+# 🧩 Extensions
+
+OpenClaiming supports **standardized extensions** for common use cases.
+
+These are:
+
+- 💸 **Payments** — spending authorization
+- ⚡ **Actions** — execution / invocation authorization
+
+Extensions are:
+
+- arrays of **nested OpenClaims**
+- independently signed and verifiable
+- able to use different formats (`ES256`, `EIP712`)
+
+Example:
+
+```json
+{
+  "ocp": 1,
+  "payments": [ ... ],
+  "actions": [ ... ]
+}
+```
+
+➡️ https://github.com/OpenClaiming/Documentation/blob/main/docs/extensions.md
+
+---
+
+# 🔐 Multisignature Model
+
+OpenClaiming supports native multisignature:
+
+```json
+{
+  "key": [
+    "data:key/es256;base64,...",
+    "data:key/es256;base64,..."
+  ],
+  "sig": [
+    "BASE64_SIGNATURE",
+    "BASE64_SIGNATURE"
+  ]
+}
+```
+
+- each signature corresponds to a key
+- multiple signers may be required
+- threshold is defined by application or contract
 
 ---
 
@@ -60,60 +114,49 @@ Everything else can be built on top of this.
 
 ## Core Protocol
 
-- 📘 [Introduction](https://github.com/OpenClaiming/Documentation/blob/main/docs/introduction.md)
-- 🧠 [Concepts](https://github.com/OpenClaiming/Documentation/blob/main/docs/concepts.md)
-- 📄 [OpenClaim Format](https://github.com/OpenClaiming/Documentation/blob/main/docs/openclaim_format.md)
-- 🔐 [Signatures](https://github.com/OpenClaiming/Documentation/blob/main/docs/signatures.md)
-- 🧾 [Canonicalization](https://github.com/OpenClaiming/Documentation/blob/main/docs/canonicalization.md)
-- 🌐 [Publishing Claims](https://github.com/OpenClaiming/Documentation/blob/main/docs/publishing_claims.md)
+- Introduction  
+- Concepts  
+- OpenClaim Format  
+- Signatures  
+- Canonicalization  
+- Publishing Claims  
 
 ---
 
-## Identity & Authorization
+## Extensions
 
-- 🔗 [Identity Linking](https://github.com/OpenClaiming/Documentation/blob/main/docs/identity_linking.md)
-- 📱 [Device & Session Keys](https://github.com/OpenClaiming/Documentation/blob/main/docs/device_keys.md)
-- 🛡 [Capability Claims](https://github.com/OpenClaiming/Documentation/blob/main/docs/capabilities.md)
+- Extensions Overview  
+- Payments  
+- Actions (Invocations)  
+
+---
+
+## Identity & Trust
+
+- Identity Linking  
+- Device & Session Keys  
 
 ---
 
 ## Distributed Systems
 
-- ☁️ [Intercloud Claims](https://github.com/OpenClaiming/Documentation/blob/main/docs/intercloud.md)
-- ⛓ [Blockchain Anchoring](https://github.com/OpenClaiming/Documentation/blob/main/docs/blockchain.md)
+- Intercloud Claims  
+- Blockchain Anchoring  
 
 ---
 
 ## ⛓ EVM Blockchains
 
-OpenClaiming is **blockchain-agnostic**, but can be integrated with blockchains for:
+OpenClaiming is **blockchain-agnostic**, but integrates cleanly with EVM chains.
 
-- payment execution with micropayment suport
-- claim verification on-chain
-- anchoring claims immutably
-- building trustless economic systems
+EIP-712 support enables:
 
-Unlike typical blockchain-native protocols, OpenClaiming:
+- on-chain verification of claims
+- multisignature execution
+- payment authorization
+- governance and workflow execution
 
-- does not require blockchain for validity
-- can operate entirely off-chain
-- uses blockchains only as an optional execution or settlement layer
-
-➡️ [EVM Blockchains Integration](https://github.com/OpenClaiming/Documentation/blob/main/docs/evm.md)
-
----
-
-## Implementation
-
-- ⚙ [Implementation Guide](https://github.com/OpenClaiming/Documentation/blob/main/docs/implementation.md)
-- 🔒 [Security](https://github.com/OpenClaiming/Documentation/blob/main/docs/security.md)
-- 📊 [Comparisons](https://github.com/OpenClaiming/Documentation/blob/main/docs/comparisons.md)
-- ❓ [FAQ](https://github.com/OpenClaiming/Documentation/blob/main/docs/faq.md)
-
-# 🧪 Reference Implementations
-
-All implementations expose the same core interface:
-
+➡️ https://github.com/OpenClaiming/Documentation/blob/main/docs/evm.md
 
 ---
 
@@ -123,14 +166,14 @@ All implementations expose the same core interface:
 import OpenClaim from "openclaiming";
 
 const claim = {
-    ocp: 1,
-    iss: "example.com/alice",
-    stm: { role: "admin" }
+  ocp: 1,
+  iss: "example.com/alice",
+  stm: { role: "admin" }
 };
 
 const signed = OpenClaim.sign(claim, privateKey);
 
-const valid = OpenClaim.verify(signed, publicKey);
+const valid = OpenClaim.verify(signed);
 
 console.log(valid);
 ```
@@ -141,27 +184,33 @@ console.log(valid);
 
 Convention:
 
-```
 .well-known/openclaiming/<domain>/<identity>.json
-```
 
 Example:
 
-```
 example.com/.well-known/openclaiming/example.com/alice.json
-```
+
+---
+
+# 🔁 Key Concepts Summary
+
+- OpenClaim = signed statement  
+- key = who can sign  
+- sig = signatures  
+- iss = authority  
+- sub = subject  
+- extensions = standardized semantics  
+- formats = execution environments (ES256, EIP712)  
 
 ---
 
 # 🧩 Ecosystem Repositories
 
-| Repository | Purpose |
-|-----------|--------|
-| https://github.com/OpenClaiming/spec | Normative protocol specification |
-| https://github.com/OpenClaiming/Documentation | Human-readable documentation |
-| https://github.com/OpenClaiming/test-vectors | Interoperability tests |
-| https://github.com/OpenClaiming/examples | Example claims |
-| https://openclaiming.org | Official website |
+- https://github.com/OpenClaiming/spec  
+- https://github.com/OpenClaiming/Documentation  
+- https://github.com/OpenClaiming/test-vectors  
+- https://github.com/OpenClaiming/examples  
+- https://openclaiming.org  
 
 ---
 

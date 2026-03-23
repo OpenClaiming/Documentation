@@ -18,7 +18,7 @@ If a private key is compromised, attackers may produce valid claims. Systems sho
 
 ## Replay and Context
 
-Claims should be interpreted within their context. Applications may add additional checks such as nonce validation or domain binding.
+Claims should be interpreted within their context. Applications may add additional checks such as nonce validation or domain binding. Replay protection is an application concern. Systems that require nonce or sequence guarantees should include them in the stm payload, which is covered by the signature.
 
 ## Transport Security
 

@@ -10,7 +10,7 @@ OpenClaiming provides primitives that identity systems can build upon.
 
 ## Can claims be revoked?
 
-Revocation strategies depend on the application. Common approaches include publishing revocation claims or using expiration timestamps.
+Revocation strategies depend on the application. Claims using URL-based keys can be revoked by updating the key document at that URL. Claims using inline data:key/... keys are permanently valid for as long as the signature verifies — this is intentional for use cases requiring permanent non-repudiation.
 
 ## Can multiple signatures be used?
 

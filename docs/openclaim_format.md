@@ -5,7 +5,7 @@ OpenClaim documents follow a minimal JSON structure.
 Example:
 
 {
-  "ocp": "1",
+  "ocp": 1,
   "iss": "example.com",
   "sub": "alice",
   "stm": {
@@ -20,15 +20,15 @@ Example:
 
 ### ocp
 
-Protocol version identifier.
+Protocol version identifier. Must be an integer, current version is 1.
 
 ### iss
 
-Issuer identifier. This identifies the entity that signed the claim.
+Issuer identifier. This identifies the entity that signed the claim. Recommended to be a URI.
 
 ### sub
 
-Subject identifier. The entity that the statement refers to.
+Subject identifier. The entity that the statement refers to. Recommended to be a URI.
 
 ### stm
 
