@@ -5,7 +5,7 @@ Technical documentation for using the **OpenClaiming** smart contract as the can
 **Canonical OpenClaiming contract address (all supported chains):**
 
 ```text
-0x99996a51cc950d9822D68b83fE1Ad97B32Cd9999
+0x99999febd42cad798fe10ab0b1c563002fc99999
 ```
 
 ---
@@ -104,7 +104,7 @@ Example:
       "sub": "evm:56:token:0x2222222222222222222222222222222222222222",
       "stm": {
         "chainId": "56",
-        "verifyingContract": "0x99996a51cc950d9822D68b83fE1Ad97B32Cd9999",
+        "verifyingContract": "0x99999febd42cad798fe10ab0b1c563002fc99999",
         "recipients": [
           "evm:56:address:0x3333333333333333333333333333333333333333"
         ],
@@ -164,7 +164,7 @@ For actions, this is typically the authority on whose behalf an action is author
 The subject is the semantic object the claim is about.
 
 For payments, this is usually the token or native asset.  
-For actions, this is often the execution target, control object, or governed resource.
+For actions, this is the ControlContract that will receive the invoke and endorse calls.
 
 ### Important
 
@@ -351,6 +351,8 @@ It does **not** force one specific execution policy.
 
 Different contracts may interpret the same valid payment claim differently, as long as execution remains within the authorized set.
 
+OpenClaiming is designed to work with any contract implementing the minimal `pay(address recipient, uint256 amount)` interface, including `IncomeContract`, via the EIP-2771 forwarding path.
+
 ---
 
 ## Payment Claim Shape
@@ -363,7 +365,7 @@ Different contracts may interpret the same valid payment claim differently, as l
   "sub": "evm:56:token:0x2222222222222222222222222222222222222222",
   "stm": {
     "chainId": "56",
-    "verifyingContract": "0x99996a51cc950d9822D68b83fE1Ad97B32Cd9999",
+    "verifyingContract": "0x99999febd42cad798fe10ab0b1c563002fc99999",
     "recipients": [
       "evm:56:address:0x3333333333333333333333333333333333333333"
     ],
@@ -387,14 +389,20 @@ The payment claim maps to a fixed Solidity struct:
 
 ```solidity
 struct Payment {
-	address payer;
-	address token;
-	bytes32 recipientsHash;
-	uint256 max;
-	uint256 line;
-	uint256 nbf;
-	uint256 exp;
+    address payer;
+    address token;
+    bytes32 recipientsHash;
+    uint256 max;
+    uint256 line;
+    uint256 nbf;
+    uint256 exp;
 }
+```
+
+EIP-712 type string:
+
+```text
+Payment(address payer,address token,bytes32 recipientsHash,uint256 max,uint256 line,uint256 nbf,uint256 exp)
 ```
 
 ---
@@ -451,7 +459,7 @@ Convert decimal string to `uint256`.
 
 ### `stm.line`
 
-Convert decimal string to `uint256`.
+Convert decimal string to `uint256`. Use `"0"` or omit for the default line (always open, no contract-level cap beyond claim max).
 
 ### `nbf`, `exp`
 
@@ -488,14 +496,6 @@ Use:
 - `chainId = stm.chainId`
 - `verifyingContract = stm.verifyingContract`
 
-The OpenClaiming contract address should normally be:
-
-```text
-0x99996a51cc950d9822D68b83fE1Ad97B32Cd9999
-```
-
-on chains where Intercoin has deployed the canonical implementation.
-
 ---
 
 ## Payment Digest
@@ -504,15 +504,35 @@ The final digest is standard EIP-712:
 
 ```solidity
 keccak256(
-	abi.encodePacked(
-		"\x19\x01",
-		domainSeparator,
-		structHash
-	)
+    abi.encodePacked(
+        "\x19\x01",
+        domainSeparator,
+        structHash
+    )
 )
 ```
 
 That is the digest signers sign and the contract verifies.
+
+---
+
+## Payment Execution Paths
+
+### Direct ERC-20 (`incomeContract = address(0)`)
+
+The standard path. OpenClaiming calls `token.transferFrom(payer, recipient, amount)` directly.
+
+Requires: `token.approve(OPENCLAIMING, amount)` from the payer beforehand.
+
+### Via IncomeContract (`incomeContract != address(0)`)
+
+For contracts implementing `pay(address recipient, uint256 amount)` — such as `IncomeContract`. OpenClaiming forwards the call via EIP-2771, so `_msgSender()` inside the target contract resolves to `p.payer` rather than OpenClaiming's address. This preserves on-chain identity and allows the target contract to apply payer-specific access controls.
+
+Requires: OpenClaiming must be registered as TrustedForwarder on the target contract.
+
+### Native Coin (`p.token = address(0)`)
+
+`msg.sender` must be `p.payer` and `msg.value` must equal `amount`. Native coin cannot be delegated — the payer must call the contract directly.
 
 ---
 
@@ -528,55 +548,34 @@ The OpenClaiming contract verifies:
 - recipient compatibility
 - claim max compatibility
 
-Execution may still depend on integrating contracts.
-
-Examples:
-
-- ERC-20 transfer via allowance
-- native coin settlement
-- downstream payment routing
-- integration with `IncomeContract`
-- integration with `Community` policy
-
 ---
 
 ## Trustline / Line Model
 
 OpenClaiming payments use line-based accounting.
 
-Conceptually:
-
 ```text
 payer → line → max → spent → open/closed
 ```
 
-A payment claim references a line and defines claim-level authorization.
+**Line 0 (default line):** Always open. No contract-level cap beyond the claim's own `max`. Use for most payment flows. No `lineOpen()` call required.
 
-A contract computes remaining capacity using both claim and line state.
+**Lines ≥ 1:** Optional budget-isolation buckets. Must be opened via `lineOpen()` before use. Each line has its own ceiling (`max`) tracked separately from the claim ceiling. The effective remaining capacity is `min(claim.max, line.max) - line.spent`.
 
-Typical mental model:
+All lines draw from the same underlying token balance and allowance.
 
-```text
-remaining = min(claim.max, line.max) - line.spent
-```
+### Line management functions
 
-If line max is unlimited, line policy may defer entirely to claim max.
-
-Implementors must follow the actual deployed contract semantics for:
-
-- `lineOpen`
-- `lineClose`
-- `lineAvailable`
-- claim max interpretation
-- unlimited max behavior
+- `lineOpen(account, line, max)` — open a line or update its ceiling. Only the account itself or its Ownable owner may call this.
+- `lineClose(account, line)` — close a line. Cannot close line 0. Spent history is preserved.
+- `lineIsOpen(account, line)` — returns `true` if the line is open (always `true` for line 0).
+- `lineAvailable(account, line, token, claimMax)` — returns the remaining capacity considering both line and claim ceilings.
 
 ---
 
 ## Multi-Line Aggregation
 
-The OpenClaiming contract may support combining capacity across multiple claims / lines.
-
-Typical requirements for aggregation:
+The OpenClaiming contract supports combining capacity across multiple claims via `paymentsExecuteSignatures`. Typical requirements:
 
 - same payer
 - same token
@@ -584,41 +583,35 @@ Typical requirements for aggregation:
 - each claim individually valid
 - total amount within combined remaining capacity
 
-Integrators should use the contract’s explicit multi-payment execution functions where available.
-
 ---
 
 ## ERC-20 vs Native Coin
 
 ### ERC-20
 
-Usually requires:
+Requires:
 
 ```solidity
 token.approve(OPENCLAIMING, amount)
 ```
 
-Then execution uses `transferFrom`.
+Execution uses `transferFrom`.
 
 ### Native Coin
-
-Represented by:
 
 ```solidity
 token == address(0)
 ```
 
-Native-coin execution typically uses `msg.value` and cannot be delegated in the same way as ERC-20 allowance-based spending.
-
-Implementors must follow the deployed contract’s payment execution rules.
+Uses `msg.value`. Cannot be delegated — payer must be `msg.sender`.
 
 ---
 
 # ⚡ Actions Extension
 
-The `actions` extension standardizes execution authorizations.
+The `actions` extension standardizes execution authorizations for governance operations.
 
-These claims authorize operations that may later be:
+These claims authorize operations that may be:
 
 - invoked
 - endorsed
@@ -628,7 +621,7 @@ These claims authorize operations that may later be:
 
 An action claim represents **authorized intent**, not guaranteed immediate execution.
 
-This maps naturally to workflow/governance contracts such as `ControlContract`.
+OpenClaiming is designed to work with any contract implementing the minimal `invoke(address, string, string)` and `endorse(uint256)` interface, including `ControlContract`.
 
 ---
 
@@ -642,13 +635,14 @@ This maps naturally to workflow/governance contracts such as `ControlContract`.
   "sub": "evm:56:address:0x4444444444444444444444444444444444444444",
   "stm": {
     "chainId": "56",
-    "verifyingContract": "0x99996a51cc950d9822D68b83fE1Ad97B32Cd9999",
+    "verifyingContract": "0x99999febd42cad798fe10ab0b1c563002fc99999",
     "contract": "evm:56:address:0x5555555555555555555555555555555555555555",
     "method": "a9059cbb",
     "params": "000000000000000000000000...",
     "minimum": "2",
     "fraction": "5000000000",
-    "delay": "3600"
+    "delay": "3600",
+    "invoker": "evm:56:address:0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   },
   "key": [
     "data:key/eip712,evm:56:address:0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -661,26 +655,43 @@ This maps naturally to workflow/governance contracts such as `ControlContract`.
 }
 ```
 
+`stm.invoker` may be omitted or set to the zero address for the v1 execution path (see below).
+
 ---
 
 ## Action EIP-712 Struct
 
-A fixed Solidity struct should be used, for example:
-
 ```solidity
 struct Action {
-	address authority;
-	address subject;
-	address contractAddress;
-	bytes4 method;
-	bytes32 paramsHash;
-	uint256 minimum;
-	uint256 fraction;
-	uint256 delay;
-	uint256 nbf;
-	uint256 exp;
+    address authority;
+    address subject;
+    address contractAddress;
+    bytes4  method;
+    bytes32 paramsHash;
+    uint256 minimum;
+    uint256 fraction;
+    uint256 delay;
+    address invoker;
+    uint256 nbf;
+    uint256 exp;
 }
 ```
+
+EIP-712 type string:
+
+```text
+Action(address authority,address subject,address contractAddress,bytes4 method,bytes32 paramsHash,uint256 minimum,uint256 fraction,uint256 delay,address invoker,uint256 nbf,uint256 exp)
+```
+
+### The `invoker` field
+
+`invoker` determines which execution path OpenClaiming uses:
+
+- `invoker = address(0)` → `actionsExecute()` path. OpenClaiming calls `invoke()` and `endorse()` directly as `msg.sender`. The target ControlContract must grant OpenClaiming the invoke and endorse roles in its Community contract. Only one endorsement is contributed per transaction; if `minimum > 1`, remaining endorsements must come from separate EOA transactions.
+
+- `invoker = <address>` → `actionsInvoke()` path. OpenClaiming forwards `invoke()` as the invoker and `endorse()` as each valid signer via EIP-2771. The target ControlContract must register OpenClaiming as TrustedForwarder and use `_msgSender()` throughout. Multi-endorser quorum can be met in one transaction.
+
+`minimum`, `fraction`, and `delay` are committed in the signed digest for policy auditability and enforcement by v2 contracts. In v1 ControlContract these values are stored per-method in `addMethod()` and are not passed to `invoke()`.
 
 ---
 
@@ -692,17 +703,17 @@ Parse into EVM `address`.
 
 ### `sub` → `subject`
 
-Parse into EVM `address`.
+Parse into EVM `address`. This is the ControlContract that will receive the `invoke()` and `endorse()` calls.
 
-### `stm.contract`
+### `stm.contract` → `contractAddress`
 
-Parse into EVM `address`.
+Parse into EVM `address`. This is the target contract that ControlContract will ultimately call.
 
-### `stm.method`
+### `stm.method` → `method`
 
-Interpret as hex selector and convert to `bytes4`.
+Interpret as 8-character hex selector (without `0x` prefix) and convert to `bytes4`.
 
-### `stm.params`
+### `stm.params` → `paramsHash`
 
 Interpret as hex-encoded ABI parameter bytes and hash:
 
@@ -710,17 +721,23 @@ Interpret as hex-encoded ABI parameter bytes and hash:
 paramsHash = keccak256(paramsBytes)
 ```
 
-### `stm.minimum`
+The raw `paramsBytes` must be passed separately to execution functions alongside the struct.
+
+### `stm.minimum` → `minimum`
 
 Convert decimal string to `uint256`.
 
-### `stm.fraction`
+### `stm.fraction` → `fraction`
 
-Convert decimal string to `uint256`.
+Convert decimal string to `uint256`. Represents fractional quorum out of `1e10` (e.g. `"5000000000"` = 50%).
 
-### `stm.delay`
+### `stm.delay` → `delay`
 
-Convert decimal string to `uint256`.
+Convert decimal string to `uint256`. Seconds after quorum before execution is allowed.
+
+### `stm.invoker` → `invoker`
+
+Parse `evm:<chainId>:address:<0x...>` into EVM `address`. If omitted or zero address, use `actionsExecute()`. If non-zero, use `actionsInvoke()`.
 
 ### `nbf`, `exp`
 
@@ -745,11 +762,11 @@ Same EIP-712 construction:
 
 ```solidity
 keccak256(
-	abi.encodePacked(
-		"\x19\x01",
-		domainSeparator,
-		structHash
-	)
+    abi.encodePacked(
+        "\x19\x01",
+        domainSeparator,
+        structHash
+    )
 )
 ```
 
@@ -769,15 +786,17 @@ This matches systems like `ControlContract`, where:
 
 - one actor proposes an operation
 - additional actors endorse it
-- quorum is evaluated
-- execution may happen immediately or later
-- delays may apply
+- quorum is evaluated against minimum and fraction thresholds
+- execution may happen immediately or after a delay
+- execution calls the target contract with the committed params
 
-So a valid action claim is best understood as:
+A valid action claim is best understood as a **standardized signed execution authorization envelope**, not an already-executed transaction.
 
-> a standardized signed execution authorization envelope
+### Execution functions
 
-not as an already-executed transaction.
+**`actionsExecute(a, params, signers, signatures, minValid)`** — v1 ControlContract path. `a.invoker` must be `address(0)`. OpenClaiming acts as `msg.sender` for both `invoke()` and `endorse()`. The invokeID is re-derived from `keccak256(block.timestamp, block.difficulty, address(OpenClaiming))` to match the v1 ControlContract's `generateInvokeID()`. Use when the ControlContract does not support EIP-2771.
+
+**`actionsInvoke(a, params, signers, signatures, minValid)`** — v2 ControlContract path. `a.invoker` must be non-zero and present in `signers` with a valid signature. OpenClaiming forwards `invoke()` as `a.invoker` and `endorse()` as each valid signer via EIP-2771. The invokeID is re-derived from `keccak256(block.timestamp, block.prevrandao, a.invoker)`. Multi-endorser quorum can be satisfied in one transaction. Use when the ControlContract registers OpenClaiming as TrustedForwarder and uses `_msgSender()` throughout.
 
 ---
 
@@ -785,20 +804,17 @@ not as an already-executed transaction.
 
 A contract may impose additional conditions before execution, such as:
 
-- signer must hold an invoke role
-- signer must hold an endorse role
-- current group membership must be valid
+- signer must hold an invoke role in Community
+- signer must hold an endorse role in Community
+- current group membership must be valid (heartbeat)
 - quorum must satisfy minimum and fraction thresholds
-- delays must elapse
+- delays must elapse before `execute()` is called
 
-This is expected.  
-OpenClaim verification does not replace contract-specific authorization logic.
+OpenClaim verification does not replace contract-specific authorization logic. A valid OpenClaiming signature check is a necessary condition for execution, not a sufficient one.
 
 ---
 
 # 🧾 EIP-712 Is Not Generic JSON
-
-This is an important limitation.
 
 EIP-712 is **not** a general-purpose extensible JSON encoding.
 
@@ -828,22 +844,26 @@ Other extension ideas may still exist as OpenClaims, but unless they define a fi
 The canonical contract at:
 
 ```text
-0x99996a51cc950d9822D68b83fE1Ad97B32Cd9999
+0x99999febd42cad798fe10ab0b1c563002fc99999
 ```
 
-is expected to provide functionality such as:
+provides:
 
-- line management
-- payment verification
-- payment execution
-- multisig signature verification
-- action verification
-- action execution / dispatch hooks
-- typed digest verification for standard extensions
+**Line management:** `lineOpen`, `lineClose`, `lineIsOpen`, `lineAvailable`
 
-Exact method names and signatures should be taken from the deployed ABI for the specific release you integrate against.
+**Payment verification:** `paymentsVerify`, `paymentsVerifySignatures`, `paymentsPreFlight`
 
-This documentation describes the semantic contract model, not a substitute for the ABI.
+**Payment execution:** `paymentsExecute` (single signature), `paymentsExecuteSignatures` (multisig)
+
+**Action verification:** `actionsVerify`, `actionsVerifySignatures`, `actionsPreFlight`
+
+**Action execution:** `actionsExecute` (v1 ControlContract, direct call), `actionsInvoke` (v2 ControlContract, EIP-2771 forwarding)
+
+**Digest utilities:** `paymentsDomainSeparator`, `paymentsHash`, `paymentsDigest`, `paymentsRecoverSigner`, `actionsDomainSeparator`, `actionsHash`, `actionsDigest`, `actionsRecoverSigner`, `actionsHashParams`, `paymentsHashRecipients`
+
+**Signature utilities:** `recoverSigner`, `verify`, `verifySignatures`
+
+Exact method signatures should be taken from the deployed ABI for the specific release you integrate against.
 
 ---
 
@@ -857,14 +877,13 @@ The OpenClaiming contract does **not**:
 - sign claims
 - discover schemas dynamically
 - act as a general arbitrary schema registry
+- verify that target contracts (ControlContract, IncomeContract, etc.) are genuine Intercoin deployments — callers are responsible for passing trusted addresses
 
 Those responsibilities remain off-chain.
 
 ---
 
 # 🛠 Implementation Checklist
-
-If you are implementing an EVM integration, do all of the following:
 
 ## Claim Validation
 
@@ -876,7 +895,7 @@ If you are implementing an EVM integration, do all of the following:
 
 ## Identifier Validation
 
-- parse `iss`, `sub`, recipients, contract targets, and signer keys
+- parse `iss`, `sub`, recipients, contract targets, signer keys, and `stm.invoker`
 - ensure all embedded chain ids match
 - reject unsupported identifier grammars
 
@@ -884,16 +903,16 @@ If you are implementing an EVM integration, do all of the following:
 
 - select extension (`payments` or `actions`)
 - convert semantic identifiers into native EVM values
-- hash arrays deterministically
+- hash arrays and params deterministically
 - build exact struct values expected by the contract
+- for actions: set `invoker = address(0)` for v1 path, or a valid signer address for v2 path
 
 ## Domain Construction
 
-- use extension-specific domain name
+- use extension-specific domain name (`"OpenClaiming.payments"` or `"OpenClaiming.actions"`)
 - use version `"1"`
 - use chain id from claim
-- use verifying contract from claim
-- normally point to `0x99996a51cc950d9822D68b83fE1Ad97B32Cd9999`
+- use verifying contract from claim — normally `0x99999febd42cad798fe10ab0b1c563002fc99999`
 
 ## Multisig Verification
 
@@ -901,13 +920,14 @@ If you are implementing an EVM integration, do all of the following:
 - decode `sig[]`
 - recover signer addresses
 - deduplicate signers
-- enforce quorum
-- pass contract-level policy checks
+- enforce quorum (`minValid`)
+- for `actionsInvoke`: verify `invoker` is among the valid signers
 
 ## Execution
 
-- for payments: select recipient and amount within authorized constraints
-- for actions: submit invoke/endorse/execute flow as required
+- for payments: select recipient and amount within authorized constraints; choose direct ERC-20 or IncomeContract path
+- for actions: choose `actionsExecute` (v1) or `actionsInvoke` (v2) based on `stm.invoker`
+- pass raw `params` bytes alongside the Action struct — the contract verifies `keccak256(params) == a.paramsHash`
 - handle contract-specific failure conditions
 - do not assume valid signatures guarantee success
 
@@ -915,48 +935,46 @@ If you are implementing an EVM integration, do all of the following:
 
 # 🧪 Frontend Example (ethers.js)
 
-This is a conceptual payment example. Actual production code should validate the full OpenClaim and extension semantics before signing.
+Conceptual payment signing example. Production code should validate the full OpenClaim before signing.
 
 ```javascript
 import { ethers } from "ethers";
 
-const OPENCLAIMING = "0x99996a51cc950d9822D68b83fE1Ad97B32Cd9999";
+const OPENCLAIMING = "0x99999febd42cad798fe10ab0b1c563002fc99999";
 
 const domain = {
-	name: "OpenClaiming.payments",
-	version: "1",
-	chainId: 56,
-	verifyingContract: OPENCLAIMING
+    name: "OpenClaiming.payments",
+    version: "1",
+    chainId: 56,
+    verifyingContract: OPENCLAIMING
 };
 
 const types = {
-	Payment: [
-		{ name: "payer", type: "address" },
-		{ name: "token", type: "address" },
-		{ name: "recipientsHash", type: "bytes32" },
-		{ name: "max", type: "uint256" },
-		{ name: "line", type: "uint256" },
-		{ name: "nbf", type: "uint256" },
-		{ name: "exp", type: "uint256" }
-	]
+    Payment: [
+        { name: "payer",          type: "address" },
+        { name: "token",          type: "address" },
+        { name: "recipientsHash", type: "bytes32" },
+        { name: "max",            type: "uint256" },
+        { name: "line",           type: "uint256" },
+        { name: "nbf",            type: "uint256" },
+        { name: "exp",            type: "uint256" }
+    ]
 };
 
-const recipients = [
-	"0x3333333333333333333333333333333333333333"
-];
+const recipients = ["0x3333333333333333333333333333333333333333"];
 
 const recipientsHash = ethers.keccak256(
-	ethers.AbiCoder.defaultAbiCoder().encode(["address[]"], [recipients])
+    ethers.AbiCoder.defaultAbiCoder().encode(["address[]"], [recipients])
 );
 
 const value = {
-	payer: "0x1111111111111111111111111111111111111111",
-	token: "0x2222222222222222222222222222222222222222",
-	recipientsHash,
-	max: "3000000",
-	line: "7",
-	nbf: 0,
-	exp: 0
+    payer:          "0x1111111111111111111111111111111111111111",
+    token:          "0x2222222222222222222222222222222222222222",
+    recipientsHash,
+    max:            "3000000",
+    line:           "7",
+    nbf:            0,
+    exp:            0
 };
 
 const signature = await signer.signTypedData(domain, types, value);
@@ -964,21 +982,83 @@ const signature = await signer.signTypedData(domain, types, value);
 
 ---
 
-# 🧪 Solidity Integration Sketch
+# 🧪 Action Signing Example (ethers.js)
 
-This is only a sketch. Use the actual ABI for production integration.
+```javascript
+import { ethers } from "ethers";
+
+const OPENCLAIMING = "0x99999febd42cad798fe10ab0b1c563002fc99999";
+
+const domain = {
+    name: "OpenClaiming.actions",
+    version: "1",
+    chainId: 56,
+    verifyingContract: OPENCLAIMING
+};
+
+const types = {
+    Action: [
+        { name: "authority",       type: "address" },
+        { name: "subject",         type: "address" },
+        { name: "contractAddress", type: "address" },
+        { name: "method",          type: "bytes4"  },
+        { name: "paramsHash",      type: "bytes32" },
+        { name: "minimum",         type: "uint256" },
+        { name: "fraction",        type: "uint256" },
+        { name: "delay",           type: "uint256" },
+        { name: "invoker",         type: "address" },
+        { name: "nbf",             type: "uint256" },
+        { name: "exp",             type: "uint256" }
+    ]
+};
+
+// Raw ABI-encoded params (without method selector)
+const params = ethers.AbiCoder.defaultAbiCoder().encode(
+    ["address", "uint256"],
+    ["0x3333333333333333333333333333333333333333", "1000000"]
+);
+const paramsHash = ethers.keccak256(params);
+
+const value = {
+    authority:       "0x1111111111111111111111111111111111111111",
+    subject:         "0x4444444444444444444444444444444444444444", // ControlContract
+    contractAddress: "0x5555555555555555555555555555555555555555", // target
+    method:          "0xa9059cbb",                                  // transfer(address,uint256)
+    paramsHash,
+    minimum:         "2",
+    fraction:        "5000000000",
+    delay:           "0",
+    invoker:         "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // non-zero = v2 path
+    nbf:             0,
+    exp:             0
+};
+
+const signature = await signer.signTypedData(domain, types, value);
+
+// For v1 path (actionsExecute), set invoker to ethers.ZeroAddress
+// and ensure OpenClaiming holds invoke+endorse roles in Community.
+```
+
+---
+
+# 🧪 Solidity Integration Sketch
 
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 interface IOpenClaiming {
-	// Use the exact ABI from the deployed contract release.
+    // Use the exact ABI from the deployed contract release.
+    // Key functions:
+    //   paymentsExecute(Payment, address[] recipients, bytes sig, address recipient, uint256 amount, address incomeContract)
+    //   paymentsExecuteSignatures(Payment, address[] recipients, address recipient, uint256 amount, address[] signers, bytes[] signatures, uint256 minValid, address incomeContract)
+    //   actionsExecute(Action, bytes params, address[] signers, bytes[] signatures, uint256 minValid)
+    //   actionsInvoke(Action, bytes params, address[] signers, bytes[] signatures, uint256 minValid)
 }
 
 contract OpenClaimingConsumer {
-	address public constant OPENCLAIMING =
-		0x99996a51cc950d9822D68b83fE1Ad97B32Cd9999;
+    address public constant OPENCLAIMING =
+        0x99999febd42cad798fe10ab0b1c563002fc99999;
 }
 ```
 
@@ -994,17 +1074,16 @@ Remote keys are possible in OpenClaim generally, but for EIP-712 execution paths
 
 Replay protection may come from:
 
-- `nbf`
-- `exp`
-- `line`
-- contract state
-- execution-specific nonces
+- `nbf` / `exp` time bounds
+- `line` spending state (spent counter advances on each execution)
+- `max` ceiling (claim cannot be executed beyond its stated maximum)
+- contract state for actions (invokeID is consumed once endorsed/executed)
 
-Do not rely on time fields alone if replay resistance matters economically.
+Do not rely on time fields alone if replay resistance matters economically. The `line` and `max` fields are the primary economic replay controls for payments.
 
 ## Signature encoding
 
-Ensure signatures are normalized and consistently decoded as 65-byte EVM signatures.
+Ensure signatures are normalized and consistently decoded as 65-byte EVM signatures (`r || s || v`). The contract enforces low-s canonicality to prevent signature malleability.
 
 ## Chain separation
 
@@ -1016,14 +1095,15 @@ Never ignore chain ids embedded in:
 
 ## Contract binding
 
-Never sign or verify against the wrong `verifyingContract`.  
-This should normally be:
+Never sign or verify against the wrong `verifyingContract`. This should normally be:
 
 ```text
-0x99996a51cc950d9822D68b83fE1Ad97B32Cd9999
+0x99999febd42cad798fe10ab0b1c563002fc99999
 ```
 
-for the canonical Intercoin deployment on supported chains.
+## Contract trust
+
+OpenClaiming does not verify that target contracts (`subject`, `incomeContract`) are genuine Intercoin deployments. Callers are responsible for passing trusted addresses. A malicious contract at `a.subject` could behave arbitrarily when `invoke()` or `endorse()` is called.
 
 ---
 
@@ -1036,19 +1116,19 @@ OpenClaiming EVM provides:
 - deterministic EIP-712 verification
 - multisignature support
 - line-based accounting for payments
-- contract-friendly execution hooks
+- two action execution paths: direct (v1 ControlContract) and EIP-2771 forwarding (v2 ControlContract)
 - composable integration with systems like `Community`, `IncomeContract`, and `ControlContract`
-
-In short:
 
 ```text
 OpenClaim JSON
-→ standard extension
+→ standard extension (payments or actions)
 → EIP-712 typed mapping
 → digest
-→ signer recovery
-→ multisig verification (e.g. with OpenClaiming contract)
-→ contract-specific execution (e.g. via TrustedForwarder)
+→ signer recovery + multisig verification
+→ contract execution:
+    payments  → transferFrom / IncomeContract.pay (EIP-2771)
+    actionsExecute → ControlContract.invoke + endorse (direct, v1)
+    actionsInvoke  → ControlContract.invoke + endorse (EIP-2771, v2)
 ```
 
 It turns signed claims into executable on-chain authorization primitives.
